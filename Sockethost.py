@@ -1,4 +1,3 @@
-import UI
 from httphost import validateToken
 from websockets.sync.client import connect,ClientConnection
 from json import loads
@@ -11,8 +10,9 @@ EVENT_SUB_URL = "https://api.twitch.tv/helix/eventsub/subscriptions"
 DUWI_ID = '463761283'
 
 class liveListener():
-    def __init__(self):
+    def __init__(self,window):
         self.accesstoken = None
+        self.window = window
         self._current_websocket = None
         self._old_websocket: ClientConnection = None
         self._watchdog = None
@@ -30,6 +30,7 @@ class liveListener():
     def _timeout(self):
         if self._current_websocket is not None:
             self._current_websocket.close()
+        print('Timed out')
         #TODO Implement an error message
         self.start()
 
@@ -45,14 +46,14 @@ class liveListener():
                     if validationcycle >= 6:
                         validationcycle = 0
                         if not validateToken(self.accesstoken):
-                            self._current_websocket.close()
-                            #TODO tkinter things
+                            self.stop()
+                            #TODO UI things
                             break
                     message = loads(ws.recv())
                     self._handleMessage(message)
         except Exception as e:
             #TODO Implement an error message system
-            print(e)
+            print(f'Connection error - {e}')
 
     def stop(self):
         self._watchdog.cancel()
@@ -79,6 +80,8 @@ class liveListener():
                 self._receiveReconnect(payload)
             case "revocation":
                 self._receiveRevocation(metadata,payload)
+            case _:
+                print(f'Unknown message - {message}')
     
     def _requestSubscription(self,sessionid:str,accesstoken:str):
         headers = {
@@ -99,11 +102,17 @@ class liveListener():
         }
         sub = requests.post(EVENT_SUB_URL,headers=headers,json=body)
         print(sub.status_code)
+
         #TODO Display info in app
 
     def _receiveNotification(self,metadata:dict,payload:dict):
-        UI.Root.after(0,UI.Root.deiconify())
-        UI.Root.after(0,UI.liveNotif.configure(text='Duwi is LIVE!!!'))
+        self.window.show()
+        self.window.evaluate_js(
+            r'''
+            document.getElementById("infoText").textContent = "Duwi is LIVE!!!"
+            document.getElementById("twitch-auth").textContent = Click here to join in!
+            document.getElementById("twitch-auth").onclick = joinDuwi
+            ''')
         notification = payload["event"]
         print(notification)
         #TODO Display aditional info in app
