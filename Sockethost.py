@@ -110,7 +110,7 @@ class liveListener():
         self.window.evaluate_js(
             r'''
             document.getElementById("infoText").textContent = "Duwi is LIVE!!!"
-            document.getElementById("twitch-auth").textContent = Click here to join in!
+            document.getElementById("twitch-auth").textContent = "Click here to join in!"
             document.getElementById("twitch-auth").onclick = joinDuwi
             ''')
         notification = payload["event"]
