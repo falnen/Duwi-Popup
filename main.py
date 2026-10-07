@@ -54,7 +54,7 @@ class main():
 
 if __name__ == "__main__":
 
-    window = webview.create_window('DUWI',url='interface.html',frameless=True, width=400, height=200, min_size=(400,200), resizable=False, transparent=True)
+    window = webview.create_window('DUWI',url='interface.html',frameless=True, easy_drag=False, width=400, height=200, min_size=(400,200), resizable=False, transparent=True, on_top=True)
     listener = liveListener(window=window)
     savedtoken = Persistence.loadTokenFromFile()
     app = main()
