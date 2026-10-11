@@ -2,7 +2,9 @@ import os
 import sys
 from pathlib import Path
 import json
-
+'''
+Stores the user token in AppData so the user doesnt have to reconnect to twitch on every launch.
+'''
 def getUserAppDir():
     if sys.platform == "win32":
         base_dir = Path.home() / "AppData" / "Local" / "falnen" / "DUWI"

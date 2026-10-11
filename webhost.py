@@ -1,5 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
+import webview
 """
 Twitch provides user access tokens upon user authorization, but does so via a URL fragment.
 It places this fragment at the end of a redirect URL provided with the link to the auth page.
@@ -43,3 +44,28 @@ def validateToken(token:str) -> bool:
         return True
     elif result.reason == 'Unauthorized':
         return False
+
+window = webview.create_window(
+        'DUWI',
+        url='interface.html',
+        frameless=True,
+        easy_drag=False,
+        width=400,
+        height=200,
+        min_size=(400,200),
+        resizable=False,
+        transparent=True,
+        on_top=True)
+
+def webviewElementEdit(element:str, text:str, button:str = "null"):
+    '''
+    element: An html element defined in interface.html.\n
+    text: Text to replace using .innerHTML, or textContext for buttons.\n
+    button: function reference to assign to a button.
+    '''
+    match element:
+        case "infoText":
+            window.evaluate_js(rf'document.getElementById("{element}").innerHTML = "{text}"')
+        case "twitch-auth":
+            window.evaluate_js(rf'document.getElementById("{element}").textContent = "{text}"')
+            window.evaluate_js(rf'document.getElementById("{element}").onclick = {button}')
