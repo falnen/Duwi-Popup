@@ -19,22 +19,25 @@ class main():
         self.token = webhost.getFragment()
         self.connect()
 
-    def startListener(self):
-        Persistence.saveTokenToFile(self.token)
-        self.listener_thread = Thread(group=None,target=listener.start,kwargs={"accesstoken":self.token},daemon=True)
-        self.listener_thread.start()
-        webhost.webviewElementEdit('twitch-auth','Connected!','null')
-
     def connect(self):
         if self.token:
             valid = webhost.validateToken(self.token)
             if valid:
                 self.startListener()
             else:
+                webhost.webviewElementEdit('Log','Authentication invalid - Reconnect to Twitch.')
                 webhost.webviewElementEdit('twitch-auth','Reconnect to Twitch','connect_button')
-
         else:
-            webhost.webviewElementEdit('twitch-auth','Failed to connect... try again?','connect_button')
+            webhost.webviewElementEdit('Log','Failed to connect... try again?')
+            webhost.webviewElementEdit('twitch-auth','Connect to Twitch','connect_button')
+
+    def startListener(self):
+        Persistence.saveTokenToFile(self.token)
+        self.listener_thread = Thread(group=None,target=listener.start,kwargs={"accesstoken":self.token},daemon=True)
+        self.listener_thread.start()
+        webhost.webviewElementEdit("Log", 'Connected!')
+        webhost.webviewElementEdit('twitch-auth',"Check out Duwi's channel!",'joinDuwi')
+        
 
 if __name__ == "__main__":
 
@@ -46,18 +49,19 @@ if __name__ == "__main__":
         if savedtoken:
             app.token = savedtoken
             app.connect()
-            print("connected with saved token")
+            webhost.webviewElementEdit("Log", "Connected with saved token.")
         else:
-            print("need token")
-            webhost.webviewElementEdit('twitch-auth','Connect to twitch','connect_button')
+            webhost.webviewElementEdit("Log", "Need token.")
+            webhost.webviewElementEdit('twitch-auth','Connect to Twitch','connect_button')
             
     def onClose():
         Persistence.saveTokenToFile(listener.accesstoken)
-        webhost.webviewElementEdit('infoText','Closing ... please wait!')
+        webhost.webviewElementEdit('Log','Closing ... please wait!')
         if app.listener_thread is not None and app.listener_thread.is_alive():
             listener.stop()
             app.listener_thread.join()
-        trayicon.stop()
+        if traythread is not None and traythread.is_alive():
+            trayicon.stop()
         webhost.window.destroy()
     
     def trayClick():
@@ -65,8 +69,6 @@ if __name__ == "__main__":
 
     def iconify():
         webhost.window.hide()
-        webhost.webviewElementEdit('infoText','This window will open when Duwi comes online.<br>Minimize it to the tray for now and wait!<br>You can close the app with the X, or from the tray icon.')
-        webhost.webviewElementEdit('twitch-auth','Connected!','null')
         
     def linkToDuwi():
         webbrowser.open("https://www.twitch.tv/duwiexe")
@@ -74,6 +76,6 @@ if __name__ == "__main__":
     trayicon = pystray.Icon('Duwi popup',title='Duwi popup',icon=image,menu=pystray.Menu(pystray.MenuItem('open',trayClick,default=True,visible=False),pystray.MenuItem('Exit',onClose)))
     traythread = Thread(group=None,target=trayicon.run,daemon=True)
     traythread.start()
-    webhost.window.expose(app.twitchAuthorize,onClose,iconify,linkToDuwi)
+    webhost.window.expose(app.twitchAuthorize,onClose,iconify,linkToDuwi,app.connect)
     webhost.window.events.loaded += onLoaded
     webhost.webview.start()

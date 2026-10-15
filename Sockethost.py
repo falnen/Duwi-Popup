@@ -1,5 +1,6 @@
 from webhost import validateToken, webviewElementEdit, window
 from websockets.sync.client import connect,ClientConnection
+from websockets.exceptions import ConnectionClosedError
 from json import loads
 from threading import Timer,Lock
 import requests
@@ -17,12 +18,12 @@ class liveListener():
         self._old_websocket: ClientConnection = None
         self._watchdog = None
         self._watchdog_lock = Lock()
+        self._reconnect_limit = 0
 
     def _startWatchdog(self):
         with self._watchdog_lock:
             if self._watchdog is not None:
                 self._watchdog.cancel()
-
             self._watchdog = Timer(APP_TIMEOUT, self._timeout,)
             self._watchdog.daemon = True
             self._watchdog.start()
@@ -30,7 +31,7 @@ class liveListener():
     def _timeout(self):
         if self._current_websocket is not None:
             self._current_websocket.close()
-        print('Timed out')
+        webviewElementEdit('Log', 'Timed out, Reconnecting...')
         self.start()
 
     def start(self,URL:str = WS_URL,accesstoken:str = None):
@@ -47,14 +48,32 @@ class liveListener():
                         if not validateToken(self.accesstoken):
                             self.stop()
                             window.show()
-                            webviewElementEdit("infoText","Authentication revoked or expired.<br>Please re-authenticate.")
-                            webviewElementEdit('twitch-auth','Connect to twitch','connect_button')
+                            webviewElementEdit("Log","Authentication revoked or expired, Please re-authenticate.")
+                            webviewElementEdit('twitch-auth','Connect to Twitch','connect_button')
                             break
                     message = loads(ws.recv())
+                    self._reconnect_limit = 0
                     self._handleMessage(message)
+
         except Exception as e:
-            #TODO Implement an error message system
-            print(f'Error - {e} - {e.args}')
+            print(f'Error - {type(e)} - {e.args}')
+            self._reconnect_limit += 1
+            if self._reconnect_limit >= 5:
+                webviewElementEdit("Log", "Reconnect limit reached, Is there a network issue?")
+                webviewElementEdit('twitch-auth','Retry connection','authBypassConnect')
+                window.show()
+                self.stop()
+            elif isinstance(e, ConnectionClosedError):
+                webviewElementEdit("Log", "Connection dropped, Reconnecting...")
+                self.start()
+            elif isinstance(e, OSError):
+                webviewElementEdit("Log", rf"Network error - {e}")
+                self.start()
+            else:
+                webviewElementEdit("Log", rf"Unknow error - {e}")
+                webviewElementEdit('twitch-auth','Retry connection','authBypassConnect')
+                window.show()
+                self.stop()
 
     def stop(self):
         self._watchdog.cancel()
@@ -77,22 +96,22 @@ class liveListener():
                 self._receiveNotification(metadata,payload)
             case "session_keepalive":
                 #Sent every APP_TIMEOUT seconds if no notification is received
-                print('Keep alive')
+                pass
             case "session_reconnect":
                 self._receiveReconnect(payload)
             case "revocation":
                 self._receiveRevocation(metadata,payload)
             case _:
-                print(f'Unknown message - {message}')
+                webviewElementEdit("log", rf"Unknown message - {message}")
     
     def _requestSubscription(self,sessionid:str,accesstoken:str):
-        headers = {
+        header = {
             "Authorization": f"Bearer {accesstoken}",
             "Client-Id": APP_CLIENT_ID,
             "Content-Type": "application/json"
             }
         body = {
-            "type": "stream.online",
+            "type": None,
             "version": "1",
             "condition": {
                 "broadcaster_user_id": DUWI_ID
@@ -102,24 +121,37 @@ class liveListener():
                 "session_id": sessionid
             }
         }
-        sub = requests.post(EVENT_SUB_URL,headers=headers,json=body)
-        print(sub.status_code)
+        body["type"] = 'stream.online'
+        sub1 = requests.post(EVENT_SUB_URL,headers=header,json=body)
+        body["type"] = 'stream.offline'
+        sub2 = requests.post(EVENT_SUB_URL,headers=header,json=body)
+        if sub1.status_code and sub2.status_code:
+            webviewElementEdit("Log", "Succesfully subscribed to events.")
+        else:
+            webviewElementEdit("Log", "Failed to subscribe to events...???")
 
     def _receiveNotification(self,metadata:dict,payload:dict):
-        window.show()
-        webviewElementEdit("infoText","Duwi is LIVE!!!")# Add timestamp - <br>Started at ...
-        webviewElementEdit("twitch-auth","Click here to join in!","joinDuwi")
-        notification = payload["event"]
-        print(notification)
+        notification = payload["subscription"]["type"]
+        match notification:
+            case 'stream.online':
+                window.show()
+                webviewElementEdit("infoText","Duwi is LIVE!!!")# Add timestamp - <br>Started at ...
+                webviewElementEdit("twitch-auth","Click here to join in!","joinDuwi")
+            case 'stream.offline':
+                webviewElementEdit("infoText","This window will open when Duwi comes online.<br>Minimize it to the tray for now and wait!<br>You can close the app with the X, or from the tray icon.")
+                webviewElementEdit('twitch-auth',"Check out Duwi's channel!",'joinDuwi')
+            case _:
+                pass
+        webviewElementEdit("Log",f'Notification received: {notification}')
 
     def _receiveReconnect(self,payload:dict):
         new_ws_url = payload["session"]["reconnect_url"]
-        print(f"Reconnecting at {new_ws_url}")
+        webviewElementEdit("Log", "Reconnected to new EventSub server.")
         self._old_websocket = self._current_websocket
         self.start(new_ws_url)
 
     def _receiveRevocation(self,metadata:dict,payload:dict):
-        self._current_websocket.close()
+        self.stop()
         webviewElementEdit("infoText","Authentication revoked or expired.<br>Please re-authenticate.")
         webviewElementEdit('twitch-auth','Connect to twitch','connect_button')
-        print(payload)
+        webviewElementEdit("Log", f"Error: {payload["status"]}")

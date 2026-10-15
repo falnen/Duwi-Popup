@@ -24,9 +24,20 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 50px;
+            gap: 20px;
         }
-
+        .status-bar {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            overflow: hidden;
+            max-height: 24px;
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            right: 2px;
+            height: 24px;
+        }
     </style>
 </head>
 
@@ -37,17 +48,24 @@
             <div class="title-bar-text">Duwi!</div>
             <div class="title-bar-controls">
                 <button aria-label="Minimize" onclick="minimize()"></button>
-                <button id="closeWindow" aria-label="Close" onclick="close_window()"></button>
+                <button aria-label="Close" onclick="close_window()"></button>
             </div>
         </div>
         <div class="window-body">
             <p id="infoText">This window will open when Duwi comes online.<br>Minimize it to the tray for now and wait!<br>You can close the app with the X, or from the tray icon.</p>
             <button id="twitch-auth" onclick="connect_button()">Connect to Twitch</button>
+            <div class="status-bar">
+                <div class="status-bar-field" style="flex-grow: 0; margin: 2px">
+                    <p style="margin: 2px">Status :</p>
+                </div>
+                <div class="status-bar-field" style="margin: 2px">
+                    <p id="Log" style="margin: 2px"></p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        document.getElementById("infoText").innerHTML
         function connect_button() {
             window.pywebview.api.twitchAuthorize()
         }
@@ -59,6 +77,9 @@
         }
         function close_window() {
             window.pywebview.api.onClose()
+        }
+        function authBypassConnect() {
+            window.pywebview.apy.connect()
         }
     </script>
 </body>

@@ -1,0 +1,5 @@
+**/__pycache__/
+**/.vscode/
+__pycache__/Persistence.cpython-313.pyc
+__pycache__/Sockethost.cpython-313.pyc
+__pycache__/webhost.cpython-313.pyc

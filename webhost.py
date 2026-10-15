@@ -64,7 +64,7 @@ def webviewElementEdit(element:str, text:str, button:str = "null"):
     button: function reference to assign to a button.
     '''
     match element:
-        case "infoText":
+        case "infoText" | "Log":
             window.evaluate_js(rf'document.getElementById("{element}").innerHTML = "{text}"')
         case "twitch-auth":
             window.evaluate_js(rf'document.getElementById("{element}").textContent = "{text}"')
