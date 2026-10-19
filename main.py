@@ -77,7 +77,6 @@ if __name__ == "__main__":
         webbrowser.open("https://www.twitch.tv/duwiexe")
 
     def linkTo(Domain=None):
-        print(Domain)
         match Domain:
             case "Bsky":
                 webbrowser.open("https://bsky.app/profile/duwiexe.bsky.social")
