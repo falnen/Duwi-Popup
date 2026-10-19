@@ -1,6 +1,7 @@
 from webhost import validateToken, webviewElementEdit, window
 from websockets.sync.client import connect,ClientConnection
-from websockets.exceptions import ConnectionClosedError
+from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
+from playsound3 import playsound
 from json import loads
 from threading import Timer,Lock
 import requests
@@ -9,6 +10,7 @@ APP_TIMEOUT = 600  #INT between 10 and 600
 APP_CLIENT_ID = "5wzg88m34ulgtxj4fdfazf9d2mpxq1"
 WS_URL = f'wss://eventsub.wss.twitch.tv/ws?keepalive_timeout_seconds={APP_TIMEOUT}'
 EVENT_SUB_URL = "https://api.twitch.tv/helix/eventsub/subscriptions"
+API_URL = "https://api.twitch.tv/helix/channels"
 DUWI_ID = '463761283'
 
 class liveListener():
@@ -41,6 +43,7 @@ class liveListener():
             with connect(URL) as ws:
                 self._current_websocket = ws
                 validationcycle = 0 #Token must be validated every hour.
+                webviewElementEdit("Log", "Ready! Waiting on events...")
                 while True:
                     validationcycle += 1
                     if validationcycle >= 6:
@@ -61,8 +64,10 @@ class liveListener():
             if self._reconnect_limit >= 5:
                 webviewElementEdit("Log", "Reconnect limit reached, Is there a network issue?")
                 webviewElementEdit('twitch-auth','Retry connection','authBypassConnect')
-                window.show()
                 self.stop()
+                window.show()
+            elif isinstance(e, ConnectionClosedOK):
+                pass
             elif isinstance(e, ConnectionClosedError):
                 webviewElementEdit("Log", "Connection dropped, Reconnecting...")
                 self.start()
@@ -125,17 +130,20 @@ class liveListener():
         sub1 = requests.post(EVENT_SUB_URL,headers=header,json=body)
         body["type"] = 'stream.offline'
         sub2 = requests.post(EVENT_SUB_URL,headers=header,json=body)
-        if sub1.status_code and sub2.status_code:
-            webviewElementEdit("Log", "Succesfully subscribed to events.")
-        else:
-            webviewElementEdit("Log", "Failed to subscribe to events...???")
+        if sub1.status_code !=202 or sub2.status_code !=202:
+            webviewElementEdit("Log", rf"Failed to subscribe to events. (Sub1:{sub1.status_code},Sub2:{sub2.status_code})")
+            self.stop()
+            window.show()
 
     def _receiveNotification(self,metadata:dict,payload:dict):
         notification = payload["subscription"]["type"]
         match notification:
             case 'stream.online':
+                titlerequest = requests.get(f"{API_URL}?broadcaster_id={DUWI_ID}",headers={"Authorization": f"Bearer {self.accesstoken}","Client-Id": APP_CLIENT_ID,"Content-Type": "application/json"})
+                title = titlerequest.json()
                 window.show()
-                webviewElementEdit("infoText","Duwi is LIVE!!!")# Add timestamp - <br>Started at ...
+                playsound("WI_ERROR.wav")
+                webviewElementEdit("infoText",rf"Duwi is LIVE!!!<br>{title['data']['title']}")# Add timestamp - <br>Started at ...
                 webviewElementEdit("twitch-auth","Click here to join in!","joinDuwi")
             case 'stream.offline':
                 webviewElementEdit("infoText","This window will open when Duwi comes online.<br>Minimize it to the tray for now and wait!<br>You can close the app with the X, or from the tray icon.")
@@ -146,12 +154,12 @@ class liveListener():
 
     def _receiveReconnect(self,payload:dict):
         new_ws_url = payload["session"]["reconnect_url"]
-        webviewElementEdit("Log", "Reconnected to new EventSub server.")
         self._old_websocket = self._current_websocket
         self.start(new_ws_url)
 
     def _receiveRevocation(self,metadata:dict,payload:dict):
         self.stop()
+        window.show()
         webviewElementEdit("infoText","Authentication revoked or expired.<br>Please re-authenticate.")
         webviewElementEdit('twitch-auth','Connect to twitch','connect_button')
         webviewElementEdit("Log", f"Error: {payload["status"]}")

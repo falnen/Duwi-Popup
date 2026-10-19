@@ -24,7 +24,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 20px;
+            gap: 10px;
         }
         .status-bar {
             display: flex;
@@ -38,6 +38,21 @@
             right: 2px;
             height: 24px;
         }
+        #Linksdiv {
+            display: flex;
+            position: absolute;
+            left: 6px;
+            top: 35px;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 0px;
+            flex-shrink: 0px;
+            margin: 0px;
+        }
+        #Link {
+            width:16px;
+            height:16px;
+        }
     </style>
 </head>
 
@@ -47,11 +62,19 @@
         <div class="title-bar pywebview-drag-region">
             <div class="title-bar-text">Duwi!</div>
             <div class="title-bar-controls">
+                <button aria-label="Help" onclick="githubLink()"></button>
                 <button aria-label="Minimize" onclick="minimize()"></button>
                 <button aria-label="Close" onclick="close_window()"></button>
             </div>
         </div>
         <div class="window-body">
+            <div id="Linksdiv">
+                <a href="#" onclick="socialLinks('Bsky'); return false;" ><img id="Link" src="https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bsky.app&size=16" alt="Bsky"></a>
+                <a href="#" onclick="socialLinks('Twitter'); return false;"><img id="Link" src="https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://twitter.com&size=16" alt="Twitter"></a>
+                <a href="#" onclick="socialLinks('Youtube'); return false;"><img id="Link" src="https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://youtube.com&size=16" alt="Youtube"></a>
+                <a href="#" onclick="socialLinks('Throne'); return false;"><img id="Link" src="https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://Throne.com&size=16" alt="Throne"></a>
+                <a href="#" onclick="socialLinks('Kofi'); return false;"><img id="Link" src="https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ko-fi.com&size=16" alt="Kofi"></a>
+            </div>
             <p id="infoText">This window will open when Duwi comes online.<br>Minimize it to the tray for now and wait!<br>You can close the app with the X, or from the tray icon.</p>
             <button id="twitch-auth" onclick="connect_button()">Connect to Twitch</button>
             <div class="status-bar">
@@ -66,6 +89,7 @@
     </div>
 
     <script>
+
         function connect_button() {
             window.pywebview.api.twitchAuthorize()
         }
@@ -80,6 +104,12 @@
         }
         function authBypassConnect() {
             window.pywebview.apy.connect()
+        }
+        function githubLink() {
+            window.pywebview.api.linkToGithub()
+        }
+        function socialLinks(Domain) {
+            window.pywebview.api.linkTo(Domain)
         }
     </script>
 </body>

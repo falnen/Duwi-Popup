@@ -69,13 +69,37 @@ if __name__ == "__main__":
 
     def iconify():
         webhost.window.hide()
-        
+
+    def linkToGithub():
+        webbrowser.open("https://github.com/falnen/Duwi-Popup/tree/main")
+
     def linkToDuwi():
         webbrowser.open("https://www.twitch.tv/duwiexe")
+
+    def linkTo(Domain=None):
+        print(Domain)
+        match Domain:
+            case "Bsky":
+                webbrowser.open("https://bsky.app/profile/duwiexe.bsky.social")
+            case "Twitter":
+                webbrowser.open("https://twitter.com/Duwi_EXE")
+            case "Youtube":
+                webbrowser.open("https://youtube.com/@duwiexe")
+            case "Throne":
+                webbrowser.open("https://throne.com/duwiexe")
+            case "Kofi":
+                webbrowser.open("https://ko-fi.com/duwiexe")
 
     trayicon = pystray.Icon('Duwi popup',title='Duwi popup',icon=image,menu=pystray.Menu(pystray.MenuItem('open',trayClick,default=True,visible=False),pystray.MenuItem('Exit',onClose)))
     traythread = Thread(group=None,target=trayicon.run,daemon=True)
     traythread.start()
-    webhost.window.expose(app.twitchAuthorize,onClose,iconify,linkToDuwi,app.connect)
+    webhost.window.expose(
+        app.twitchAuthorize,
+        onClose,
+        iconify,
+        linkToDuwi,
+        linkToGithub,
+        linkTo,
+        app.connect)
     webhost.window.events.loaded += onLoaded
     webhost.webview.start()
