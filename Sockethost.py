@@ -139,11 +139,10 @@ class liveListener():
         notification = payload["subscription"]["type"]
         match notification:
             case 'stream.online':
-                titlerequest = requests.get(f"{API_URL}?broadcaster_id={DUWI_ID}",headers={"Authorization": f"Bearer {self.accesstoken}","Client-Id": APP_CLIENT_ID,"Content-Type": "application/json"})
-                title = titlerequest.json()
-                window.show()
+                channelrequest = requests.get(f"{API_URL}?broadcaster_id={DUWI_ID}",headers={"Authorization": f"Bearer {self.accesstoken}","Client-Id": APP_CLIENT_ID,"Content-Type": "application/json"})
+                channeljson = channelrequest.json()['data'][0]
                 playsound("WI_ERROR.wav")
-                webviewElementEdit("infoText",rf"Duwi is LIVE!!!<br>{title['data']['title']}")# Add timestamp - <br>Started at ...
+                webviewElementEdit("infoText",rf"Duwi is LIVE!!!<br>{channeljson['game_name']}<br>{channeljson['title']}")
                 webviewElementEdit("twitch-auth","Click here to join in!","joinDuwi")
             case 'stream.offline':
                 webviewElementEdit("infoText","This window will open when Duwi comes online.<br>Minimize it to the tray for now and wait!<br>You can close the app with the X, or from the tray icon.")
