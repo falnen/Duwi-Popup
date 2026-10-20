@@ -141,6 +141,7 @@ class liveListener():
             case 'stream.online':
                 channelrequest = requests.get(f"{API_URL}?broadcaster_id={DUWI_ID}",headers={"Authorization": f"Bearer {self.accesstoken}","Client-Id": APP_CLIENT_ID,"Content-Type": "application/json"})
                 channeljson = channelrequest.json()['data'][0]
+                window.show()
                 playsound("WI_ERROR.wav")
                 webviewElementEdit("infoText",rf"Duwi is LIVE!!!<br>{channeljson['game_name']}<br>{channeljson['title']}")
                 webviewElementEdit("twitch-auth","Click here to join in!","joinDuwi")
