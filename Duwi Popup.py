@@ -1,3 +1,5 @@
+import sys
+from pathlib import Path
 import webhost
 from  Sockethost import liveListener, APP_CLIENT_ID
 import webbrowser
@@ -6,7 +8,13 @@ from threading import Thread
 from PIL import Image
 import pystray
 
-image = Image.open("Shock by @duwiexe.png")
+def resource_path(filename):
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / filename
+
+    return Path(__file__).resolve().parent / filename
+
+image = Image.open(resource_path("Shock by @duwiexe.png"))
 
 class main():
     def __init__(self):
