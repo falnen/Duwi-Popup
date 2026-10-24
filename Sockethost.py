@@ -1,4 +1,4 @@
-from webhost import validateToken, webviewElementEdit, window
+from Utility import window, validateToken, webviewElementEdit, resourcePath
 from websockets.sync.client import connect,ClientConnection
 from websockets.exceptions import ConnectionClosedError, ConnectionClosedOK
 from playsound3 import playsound
@@ -132,6 +132,7 @@ class liveListener():
         sub2 = requests.post(EVENT_SUB_URL,headers=header,json=body)
         if sub1.status_code !=202 or sub2.status_code !=202:
             webviewElementEdit("Log", rf"Failed to subscribe to events. (Sub1:{sub1.status_code},Sub2:{sub2.status_code})")
+            webviewElementEdit('twitch-auth','Retry connection','authBypassConnect')
             self.stop()
             window.show()
 
@@ -142,7 +143,7 @@ class liveListener():
                 channelrequest = requests.get(f"{API_URL}?broadcaster_id={DUWI_ID}",headers={"Authorization": f"Bearer {self.accesstoken}","Client-Id": APP_CLIENT_ID,"Content-Type": "application/json"})
                 channeljson = channelrequest.json()['data'][0]
                 window.show()
-                playsound("CHIMES.wav")
+                playsound(resourcePath("CHIMES.wav"))
                 webviewElementEdit("infoText",rf"Duwi is LIVE!!!<br>{channeljson['game_name']}<br>{channeljson['title']}")
                 webviewElementEdit("twitch-auth","Click here to join in!","joinDuwi")
             case 'stream.offline':

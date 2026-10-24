@@ -1,11 +1,14 @@
+import sys
+from pathlib import Path
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
 import webview
-"""
-Twitch provides user access tokens upon user authorization, but does so via a URL fragment.
-It places this fragment at the end of a redirect URL provided with the link to the auth page.
-Which requires us to host a webpage to acquire this fragment.
-"""
+
+def resourcePath(filename):
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / filename
+    return Path(__file__).resolve().parent / filename
+
 class webPage(BaseHTTPRequestHandler):
     fragment = None
     def do_GET(self):
@@ -23,7 +26,12 @@ class webPage(BaseHTTPRequestHandler):
         else:
             webPage.fragment = response
 
-def getFragment() -> str: 
+def getFragment() -> str:
+    """
+    Twitch provides user access tokens upon user authorization, but does so via a URL fragment.
+    It places this fragment at the end of a redirect URL provided with the link to the auth page.
+    Which requires us to host a webpage to acquire this fragment.
+    """
     with HTTPServer(('localhost',3000),webPage) as server:
         server.handle_request()
         server.handle_request()
